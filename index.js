@@ -33,15 +33,19 @@ module.exports = send
  * @return {Function}
  * @api public
  */
-
+// koa-static基于此模块
+// await send(ctx, ctx.path, opts)
 async function send (ctx, path, opts = {}) {
+  // 使用assert模块来判断参数是否传入
   assert(ctx, 'koa context required')
   assert(path, 'pathname required')
 
   // options
   debug('send "%s" %j', path, opts)
+  // 取得绝对路径
   const root = opts.root ? normalize(resolve(opts.root)) : ''
   const trailingSlash = path[path.length - 1] === '/'
+  // 取得相对路径
   path = path.substr(parse(path).root.length)
   const index = opts.index
   const maxage = opts.maxage || opts.maxAge || 0
@@ -58,13 +62,14 @@ async function send (ctx, path, opts = {}) {
   }
 
   // normalize path
+  // 对路径进行URI解码
   path = decode(path)
 
   if (path === -1) return ctx.throw(400, 'failed to decode')
 
   // index file support
   if (index && trailingSlash) path += index
-
+  // 通过绝对路径和相关路径，获取到资源的完整路径
   path = resolvePath(root, path)
 
   // hidden file support, ignore
@@ -102,6 +107,7 @@ async function send (ctx, path, opts = {}) {
   // stat
   let stats
   try {
+    // 判断路由中指定的文件是否存在
     stats = await fs.stat(path)
 
     // Format the path to serve static file servers
@@ -137,6 +143,7 @@ async function send (ctx, path, opts = {}) {
     ctx.set('Cache-Control', directives.join(','))
   }
   if (!ctx.type) ctx.type = type(path, encodingExt)
+  // 通过fs.createReadStream, 将文件内容以可独流的方式挂载在ctx.body上。
   ctx.body = fs.createReadStream(path)
 
   return path
